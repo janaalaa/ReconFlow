@@ -1,0 +1,5 @@
+*.db
+reconflow.db
+server/reconflow.db
+__pycache__/
+*.pyc

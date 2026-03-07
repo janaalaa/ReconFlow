@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ReconFlow Command Center</title>
+    <style>
+        body { background-color: #121212; color: #00ff00; font-family: 'Courier New', Courier, monospace; padding: 30px; }
+        h1 { border-bottom: 2px solid #00ff00; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: #1e1e1e; }
+        th, td { border: 1px solid #333; padding: 12px; text-align: left; }
+        th { background-color: #2a2a2a; color: #fff; }
+        .status-progress { color: #ffaa00; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🎯 ReconFlow Command Center</h1>
+    <p>Live Asset Tracking for the Team</p>
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Target / Asset</th>
+            <th>Status</th>
+            <th>Assigned Hacker</th>
+            <th>Time Claimed</th>
+        </tr>
+        {% for row in assets %}
+        <tr>
+            <td>{{ row.id }}</td>
+            <td>{{ row.asset_value }}</td>
+            <td class="status-progress">{{ row.status }}</td>
+            <td>{{ row.assigned_to }}</td>
+            <td>{{ row.date_added }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
