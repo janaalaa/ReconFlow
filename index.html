@@ -2,103 +2,88 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ReconFlow</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReconFlow | Automated Security Recon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #0f172a;
-            color: white;
-        }
-
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 40px;
-            background: #020617;
-        }
-
-        nav h2 {
-            margin: 0;
-        }
-
-        nav a {
-            color: white;
-            margin-left: 20px;
-            text-decoration: none;
-            transition: 0.3s;
-        }
-
-        nav a:hover {
-            color: #38bdf8;
-        }
-
-        .hero {
-            text-align: center;
-            margin-top: 100px;
-        }
-
-        .hero h1 {
-            font-size: 40px;
-            margin-bottom: 10px;
-        }
-
-        .hero p {
-            color: #94a3b8;
-        }
-
-        .section {
-            margin: 80px;
-            text-align: center;
-        }
-
-        .section h2 {
-            margin-bottom: 15px;
-        }
-
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        li {
-            margin: 10px 0;
-            color: #cbd5f5;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        .mono { font-family: 'Fira Code', monospace; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
+<body class="min-h-screen">
 
-<body>
+    <!-- Navigation -->
+    <nav class="flex justify-between items-center p-6 max-w-6xl mx-auto">
+        <div class="text-2xl font-bold tracking-tighter text-blue-400">Recon<span class="text-white">Flow</span></div>
+        <div class="space-x-6">
+            <a href="index.html" class="hover:text-blue-400 transition">Home</a>
+            <a href="docs.html" class="hover:text-blue-400 transition">Docs</a>
+            <a href="https://github.com/janaalaa/ReconFlow" class="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 transition">GitHub</a>
+        </div>
+    </nav>
 
-<nav>
-    <h2>ReconFlow</h2>
-    <div>
-        <a href="#">Home</a>
-        <a href="docs.html">Docs</a>
-        <a href="about.html">About</a>
-    </div>
-</nav>
+    <!-- Hero Section -->
+    <header class="text-center py-20 px-4">
+        <h1 class="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+            Automate Your Reconnaissance
+        </h1>
+        <p class="text-gray-400 text-xl max-w-2xl mx-auto mb-10">
+            A modular framework designed for bug bounty hunters and penetration testers to streamline the discovery phase.
+        </p>
+        <div class="flex justify-center gap-4">
+            <a href="#features" class="bg-white text-slate-900 px-8 py-3 rounded-full font-bold hover:bg-gray-200 transition">Explore Features</a>
+            <code class="glass px-6 py-3 rounded-full text-sm mono border border-blue-500/30">git clone ...ReconFlow.git</code>
+        </div>
+    </header>
 
-<div class="hero">
-    <h1>Welcome to ReconFlow🤩</h1>
-    <p>Automate your reconnaissance workflow</p>
-</div>
+    <!-- Features Grid -->
+    <section id="features" class="max-w-6xl mx-auto px-6 py-20">
+        <h2 class="text-3xl font-bold mb-12 text-center">Core Capabilities</h2>
+        <div class="grid md:grid-cols-3 gap-8">
+            <!-- Feature 1 -->
+            <div class="glass p-8 rounded-2xl">
+                <div class="text-blue-400 mb-4 text-3xl">🔍</div>
+                <h3 class="text-xl font-bold mb-2">Subdomain Discovery</h3>
+                <p class="text-gray-400 text-sm">Integrates Subfinder and Assetfinder to map out the entire attack surface fast.</p>
+            </div>
+            <!-- Feature 2 -->
+            <div class="glass p-8 rounded-2xl">
+                <div class="text-emerald-400 mb-4 text-3xl">📡</div>
+                <h3 class="text-xl font-bold mb-2">HTTP Probing</h3>
+                <p class="text-gray-400 text-sm">Uses HTTPX to verify live hosts and collect crucial header information automatically.</p>
+            </div>
+            <!-- Feature 3 -->
+            <div class="glass p-8 rounded-2xl">
+                <div class="text-red-400 mb-4 text-3xl">🛡️</div>
+                <h3 class="text-xl font-bold mb-2">Vulnerability Scanning</h3>
+                <p class="text-gray-400 text-sm">Leverages Nuclei templates to detect misconfigurations and known CVEs in seconds.</p>
+            </div>
+        </div>
+    </section>
 
-<div class="section">
-    <h2>What is ReconFlow?</h2>
-    <p>ReconFlow is a tool that helps automate the reconnaissance process in bug bounty and penetration testing.</p>
-</div>
+    <!-- Project Flow / Terminal View -->
+    <section class="max-w-4xl mx-auto px-6 py-20">
+        <div class="bg-black rounded-xl p-1 shadow-2xl border border-gray-800">
+            <div class="flex gap-2 p-3 border-b border-gray-800">
+                <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                <div class="w-3 h-3 rounded-full bg-green-500"></div>
+            </div>
+            <div class="p-6 mono text-sm leading-relaxed">
+                <p class="text-emerald-400">$ python3 reconflow.py -d target.com</p>
+                <p class="text-gray-500">[+] Starting Subdomain Enumeration...</p>
+                <p class="text-gray-500">[+] Found 142 subdomains.</p>
+                <p class="text-blue-400">[!] Running Nuclei Vulnerability Scan...</p>
+                <p class="text-red-400">[CRITICAL] Subdomain Takeover found on dev.target.com!</p>
+            </div>
+        </div>
+    </section>
 
-<div class="section">
-    <h2>Features</h2>
-    <ul>
-        <li>Subdomain Enumeration</li>
-        <li>HTTP Probing</li>
-        <li>Automation Workflow</li>
-    </ul>
-</div>
+    <footer class="text-center py-10 text-gray-600 border-t border-gray-900 mt-20">
+        Made with 💻 by <a href="https://github.com/janaalaa" class="text-blue-500">Jana</a>
+    </footer>
 
 </body>
 </html>
