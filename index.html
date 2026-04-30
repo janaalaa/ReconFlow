@@ -7,7 +7,7 @@
     <style>
         body {
             margin: 0;
-            font-family: Arial;
+            font-family: Arial, sans-serif;
             background-color: #0f172a;
             color: white;
         }
@@ -15,14 +15,24 @@
         nav {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             padding: 15px 40px;
             background: #020617;
+        }
+
+        nav h2 {
+            margin: 0;
         }
 
         nav a {
             color: white;
             margin-left: 20px;
             text-decoration: none;
+            transition: 0.3s;
+        }
+
+        nav a:hover {
+            color: #38bdf8;
         }
 
         .hero {
@@ -32,10 +42,30 @@
 
         .hero h1 {
             font-size: 40px;
+            margin-bottom: 10px;
         }
 
         .hero p {
             color: #94a3b8;
+        }
+
+        .section {
+            margin: 80px;
+            text-align: center;
+        }
+
+        .section h2 {
+            margin-bottom: 15px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            margin: 10px 0;
+            color: #cbd5f5;
         }
     </style>
 </head>
@@ -46,14 +76,28 @@
     <h2>ReconFlow</h2>
     <div>
         <a href="#">Home</a>
-        <a href="#">Docs</a>
-        <a href="#">About</a>
+        <a href="docs.html">Docs</a>
+        <a href="about.html">About</a>
     </div>
 </nav>
 
 <div class="hero">
-    <h1>Welcome to ReconFlow</h1>
+    <h1>Welcome to ReconFlow🤩</h1>
     <p>Automate your reconnaissance workflow</p>
+</div>
+
+<div class="section">
+    <h2>What is ReconFlow?</h2>
+    <p>ReconFlow is a tool that helps automate the reconnaissance process in bug bounty and penetration testing.</p>
+</div>
+
+<div class="section">
+    <h2>Features</h2>
+    <ul>
+        <li>Subdomain Enumeration</li>
+        <li>HTTP Probing</li>
+        <li>Automation Workflow</li>
+    </ul>
 </div>
 
 </body>
