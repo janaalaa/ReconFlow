@@ -7,9 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background-color: #0b0f1a; color: #f8fafc; }
         .mono { font-family: 'Fira Code', monospace; }
-        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(59, 130, 246, 0.2); }
+        .gradient-text { background: linear-gradient(to r, #60a5fa, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     </style>
 </head>
 <body class="min-h-screen">
@@ -17,72 +18,95 @@
     <!-- Navigation -->
     <nav class="flex justify-between items-center p-6 max-w-6xl mx-auto">
         <div class="text-2xl font-bold tracking-tighter text-blue-400">Recon<span class="text-white">Flow</span></div>
-        <div class="space-x-6">
-            <a href="index.html" class="hover:text-blue-400 transition">Home</a>
-            <a href="docs.html" class="hover:text-blue-400 transition">Docs</a>
-            <a href="https://github.com/janaalaa/ReconFlow" class="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 transition">GitHub</a>
+        <div class="space-x-8 text-sm font-medium">
+            <a href="index.html" class="text-blue-400 border-b-2 border-blue-400 pb-1">Home</a>
+            <a href="docs.html" class="text-gray-400 hover:text-white transition">Docs</a>
+            <a href="https://github.com/janaalaa/ReconFlow" target="_blank" class="bg-blue-600/20 text-blue-400 border border-blue-500/50 px-5 py-2 rounded-full hover:bg-blue-600 hover:text-white transition">GitHub</a>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <header class="text-center py-20 px-4">
-        <h1 class="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
-            Automate Your Reconnaissance
+    <header class="text-center py-24 px-4">
+        <div class="inline-block px-4 py-1.5 mb-6 text-xs font-semibold tracking-wider text-blue-400 uppercase bg-blue-400/10 rounded-full border border-blue-400/20">
+            v1.0.0 Released — Bug Bounty Framework
+        </div>
+        <h1 class="text-5xl md:text-8xl font-black mb-8 tracking-tight">
+            Automate Your <br><span class="gradient-text">Reconnaissance</span>
         </h1>
-        <p class="text-gray-400 text-xl max-w-2xl mx-auto mb-10">
-            A modular framework designed for bug bounty hunters and penetration testers to streamline the discovery phase.
+        <p class="text-gray-400 text-lg md:text-xl max-w-3xl mx-auto mb-12 leading-relaxed">
+            A modular framework built to streamline asset discovery and vulnerability scanning. 
+            Built by security researchers for security researchers.
         </p>
-        <div class="flex justify-center gap-4">
-            <a href="#features" class="bg-white text-slate-900 px-8 py-3 rounded-full font-bold hover:bg-gray-200 transition">Explore Features</a>
-            <code class="glass px-6 py-3 rounded-full text-sm mono border border-blue-500/30">git clone ...ReconFlow.git</code>
+        <div class="flex flex-wrap justify-center gap-5">
+            <a href="docs.html" class="bg-blue-600 text-white px-10 py-4 rounded-xl font-bold hover:bg-blue-700 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all">Get Started</a>
+            <div class="glass flex items-center px-6 py-4 rounded-xl text-sm mono text-gray-300">
+                <span class="text-blue-500 mr-3">$</span> git clone https://github.com/janaalaa/ReconFlow.git
+            </div>
         </div>
     </header>
 
-    <!-- Features Grid -->
+    <!-- Terminal View - التعديل الجوهري هنا بناءً على تجارب الكالي -->
+    <section class="max-w-5xl mx-auto px-6 py-10">
+        <div class="relative group">
+            <!-- Glow effect -->
+            <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+            
+            <div class="relative bg-[#010409] rounded-2xl p-1 border border-gray-800 shadow-3xl">
+                <!-- Mac buttons -->
+                <div class="flex gap-2 p-4 border-b border-gray-900 bg-[#0d1117] rounded-t-2xl">
+                    <div class="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
+                    <div class="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
+                    <div class="w-3 h-3 rounded-full bg-[#27c93f]"></div>
+                    <span class="text-xs text-gray-600 ml-4 mono uppercase tracking-widest">terminal — cli/hunt.py</span>
+                </div>
+                
+                <div class="p-8 mono text-sm md:text-base leading-loose overflow-x-auto">
+                    <!-- الأمر الحقيقي اللي جربناه في صورة image_c98f3d.jpg -->
+                    <p class="text-emerald-400"><span class="text-gray-600"># Start the ReconFlow client</span></p>
+                    <p class="text-emerald-400"><span class="text-gray-500">$</span> python3 cli/hunt.py <span class="text-blue-400">run</span> -d <span class="text-white">target.com</span></p>
+                    
+                    <!-- Output يعكس الـ connection للسيرفر -->
+                    <p class="text-blue-400 mt-2">[*] Connecting to ReconFlow Backend...</p>
+                    <p class="text-emerald-500 font-medium">[✔] Handshake successful (127.0.0.1:5000)</p>
+                    <p class="text-gray-400 mt-2">[*] Scanning for subdomains (Subfinder + Assetfinder)...</p>
+                    <p class="text-gray-300 ml-4">↳ Found: <span class="text-emerald-400">142 assets</span></p>
+                    
+                    <p class="text-blue-400 mt-2">[*] Launching Nuclei templates...</p>
+                    <p class="text-gray-500 italic">[info] Matching for: vulnerabilities, misconfigurations, takeovers</p>
+                    
+                    <!-- النتيجة النهائية -->
+                    <div class="bg-red-500/10 border-l-4 border-red-500 p-3 mt-4">
+                        <p class="text-red-500 font-bold">[CRITICAL] Subdomain Takeover identified!</p>
+                        <p class="text-red-400 text-xs ml-4">Target: dev.target.com</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
     <section id="features" class="max-w-6xl mx-auto px-6 py-20">
-        <h2 class="text-3xl font-bold mb-12 text-center">Core Capabilities</h2>
-        <div class="grid md:grid-cols-3 gap-8">
-            <!-- Feature 1 -->
-            <div class="glass p-8 rounded-2xl">
-                <div class="text-blue-400 mb-4 text-3xl">🔍</div>
-                <h3 class="text-xl font-bold mb-2">Subdomain Discovery</h3>
-                <p class="text-gray-400 text-sm">Integrates Subfinder and Assetfinder to map out the entire attack surface fast.</p>
+        <div class="grid md:grid-cols-3 gap-10">
+            <div class="glass p-10 rounded-3xl hover:border-blue-500/50 transition-all group">
+                <div class="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition">🔍</div>
+                <h3 class="text-xl font-bold mb-3">Modular Engine</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">Custom-built Python CLI that orchestrates industry-standard tools into one clean workflow.</p>
             </div>
-            <!-- Feature 2 -->
-            <div class="glass p-8 rounded-2xl">
-                <div class="text-emerald-400 mb-4 text-3xl">📡</div>
-                <h3 class="text-xl font-bold mb-2">HTTP Probing</h3>
-                <p class="text-gray-400 text-sm">Uses HTTPX to verify live hosts and collect crucial header information automatically.</p>
+            <div class="glass p-10 rounded-3xl hover:border-emerald-500/50 transition-all group">
+                <div class="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition">📡</div>
+                <h3 class="text-xl font-bold mb-3">API-First Design</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">Backend server built with Flask to handle long-running recon tasks and persistent data storage.</p>
             </div>
-            <!-- Feature 3 -->
-            <div class="glass p-8 rounded-2xl">
-                <div class="text-red-400 mb-4 text-3xl">🛡️</div>
-                <h3 class="text-xl font-bold mb-2">Vulnerability Scanning</h3>
-                <p class="text-gray-400 text-sm">Leverages Nuclei templates to detect misconfigurations and known CVEs in seconds.</p>
+            <div class="glass p-10 rounded-3xl hover:border-red-500/50 transition-all group">
+                <div class="w-14 h-14 bg-red-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition">🛡️</div>
+                <h3 class="text-xl font-bold mb-3">Vuln Intelligence</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">Automated Nuclei scanning for instant identification of high-impact security vulnerabilities.</p>
             </div>
         </div>
     </section>
 
-    <!-- Project Flow / Terminal View -->
-    <section class="max-w-4xl mx-auto px-6 py-20">
-        <div class="bg-black rounded-xl p-1 shadow-2xl border border-gray-800">
-            <div class="flex gap-2 p-3 border-b border-gray-800">
-                <div class="w-3 h-3 rounded-full bg-red-500"></div>
-                <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-                <div class="w-3 h-3 rounded-full bg-green-500"></div>
-            </div>
-            <div class="p-6 mono text-sm leading-relaxed">
-                <p class="text-emerald-400">$ python3 reconflow.py -d target.com</p>
-                <p class="text-gray-500">[+] Starting Subdomain Enumeration...</p>
-                <p class="text-gray-500">[+] Found 142 subdomains.</p>
-                <p class="text-blue-400">[!] Running Nuclei Vulnerability Scan...</p>
-                <p class="text-red-400">[CRITICAL] Subdomain Takeover found on dev.target.com!</p>
-            </div>
-        </div>
-    </section>
-
-    <footer class="text-center py-10 text-gray-600 border-t border-gray-900 mt-20">
-        Made with 💻 by <a href="https://github.com/janaalaa" class="text-blue-500">Jana</a>
+    <footer class="text-center py-12 text-gray-500 border-t border-gray-900/50">
+        <p>Built for the security community with 💻 by <a href="https://github.com/janaalaa" class="text-blue-500 font-bold hover:underline">Jana Alaa</a></p>
     </footer>
 
 </body>
