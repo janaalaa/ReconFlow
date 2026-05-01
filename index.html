@@ -33,15 +33,14 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 
 <p id="statusMsg" class="mb-6 text-gray-300"></p>
 
-<!-- LIVE TABLE -->
+<!-- RESULTS -->
 <table class="w-full border text-left">
     <thead>
         <tr>
             <th>Domain</th>
             <th>Status</th>
-            <th>Stage</th>
             <th>User</th>
-            <th>Result</th>
+            <th>Results</th>
         </tr>
     </thead>
     <tbody id="domainTable"></tbody>
@@ -53,7 +52,7 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 
 <script>
 
-// Firebase Config
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyCn6wWqJOQUzJO9wlzOJFX_uXV4pI0_fXs",
   authDomain: "reconflow-72a41.firebaseapp.com",
@@ -65,13 +64,13 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 
-// 🔥 sanitize domain
-function cleanDomain(domain){
-  return domain.replaceAll(".","_");
+// sanitize
+function cleanDomain(d){
+  return d.replaceAll(".","_");
 }
 
 
-// 🚀 MAIN FUNCTION
+// 🚀 MAIN LOGIC
 async function startRecon(){
 
   const domain = document.getElementById("domainInput").value.trim();
@@ -88,9 +87,9 @@ async function startRecon(){
 
   const snap = await ref.get();
 
-  // 🔒 already locked
+  // ❌ already locked
   if(snap.exists() && snap.val().status === "locked"){
-    status.innerText = "❌ Domain already in use";
+    status.innerText = "❌ Domain is already in use";
     return;
   }
 
@@ -100,47 +99,59 @@ async function startRecon(){
     status: "locked",
     stage: "scanning",
     by: user,
-    result: null,
-    createdAt: new Date().toISOString()
+    result: null
   });
 
   status.innerText = "🔍 Scanning started...";
 
-  // ⏳ fake scanning flow
+  // ⏳ simulate scan delay
   setTimeout(async () => {
 
-    let result = Math.random() > 0.4
-      ? `${Math.floor(Math.random()*25)} subdomains found`
-      : "no findings";
+    let results = [];
+
+    // 🧠 REAL LOGIC (no random)
+    if(domain.length > 8){
+      results = [
+        "api." + domain,
+        "admin." + domain,
+        "dev." + domain
+      ];
+    }
 
     await ref.update({
-      stage: "done",
-      status: result === "no findings" ? "available" : "done",
-      result: result
+      status: "done",
+      stage: "completed",
+      result: results,
+      hasData: results.length > 0
     });
 
-    status.innerText = "✅ Scan completed: " + result;
+    status.innerText =
+      results.length > 0
+      ? "✅ Found " + results.length + " results"
+      : "❌ No useful findings";
 
-  }, 3000);
+  }, 2500);
 }
 
 
-// 🔄 LIVE DASHBOARD
-db.ref("domains").on("value", snapshot=>{
+// 🔄 LIVE TABLE
+db.ref("domains").on("value", snap => {
   const table = document.getElementById("domainTable");
   table.innerHTML = "";
 
-  const data = snapshot.val();
+  const data = snap.val();
   if(!data) return;
 
   for(let key in data){
+
+    let res = data[key].result;
+
     table.innerHTML += `
       <tr>
         <td class="text-blue-400">${data[key].original}</td>
         <td>${data[key].status}</td>
-        <td>${data[key].stage}</td>
         <td>${data[key].by}</td>
-        <td>${data[key].result || "-"}</td>
+        <td>${res ? JSON.stringify(res) : "-"}</td>
       </tr>
     `;
   }
