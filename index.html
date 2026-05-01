@@ -14,36 +14,45 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 
 <h1 class="text-3xl text-blue-400 mb-6">ReconFlow</h1>
 
-<!-- USER -->
-<div class="mb-3">
-    <input id="userInput" placeholder="Username"
-    class="p-3 text-black w-64">
-</div>
+<!-- INPUTS -->
+<div class="mb-3 space-y-2">
 
-<!-- DOMAIN -->
-<div class="mb-6">
-    <input id="domainInput" placeholder="Enter domain (example.com)"
-    class="p-3 text-black w-64">
+    <input id="targetInput" placeholder="Target (e.g. google.com)"
+    class="p-3 text-black w-64 block">
 
-    <button onclick="startRecon()"
-    class="bg-blue-600 px-4 py-3 ml-2">
-        Reserve & Scan
+    <input id="domainInput" placeholder="Domain (e.g. api.google.com)"
+    class="p-3 text-black w-64 block">
+
+    <input id="userInput" placeholder="Assigned user"
+    class="p-3 text-black w-64 block">
+
+    <select id="statusInput" class="p-3 text-black w-64 block">
+        <option value="locked">locked</option>
+        <option value="scanning">scanning</option>
+        <option value="done">done</option>
+    </select>
+
+    <button onclick="addEntry()"
+    class="bg-blue-600 px-4 py-3">
+        Save / Update
     </button>
+
 </div>
 
 <p id="statusMsg" class="mb-6 text-gray-300"></p>
 
-<!-- RESULTS -->
+<!-- TABLE -->
 <table class="w-full border text-left">
     <thead>
         <tr>
+            <th>Target</th>
             <th>Domain</th>
             <th>Status</th>
-            <th>User</th>
-            <th>Results</th>
+            <th>Assigned To</th>
+            <th>Result</th>
         </tr>
     </thead>
-    <tbody id="domainTable"></tbody>
+    <tbody id="table"></tbody>
 </table>
 
 <!-- Firebase -->
@@ -63,95 +72,71 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-
-// sanitize
-function cleanDomain(d){
+function clean(d){
   return d.replaceAll(".","_");
 }
 
 
-// 🚀 MAIN LOGIC
-async function startRecon(){
+// 🚀 ADD / UPDATE ENTRY
+async function addEntry(){
 
+  const target = document.getElementById("targetInput").value.trim();
   const domain = document.getElementById("domainInput").value.trim();
   const user = document.getElementById("userInput").value.trim();
-  const status = document.getElementById("statusMsg");
+  const status = document.getElementById("statusInput").value;
+  const msg = document.getElementById("statusMsg");
 
-  if(!domain || !user){
-    status.innerText = "⚠️ Enter username and domain";
+  if(!target || !domain || !user){
+    msg.innerText = "⚠️ Fill all fields";
     return;
   }
 
-  const key = cleanDomain(domain);
-  const ref = db.ref("domains/" + key);
+  const key = clean(domain);
+  const ref = db.ref("data/" + key);
 
-  const snap = await ref.get();
+  let result = [];
 
-  // ❌ already locked
-  if(snap.exists() && snap.val().status === "locked"){
-    status.innerText = "❌ Domain is already in use";
-    return;
-  }
-
-  // 🔒 lock domain
-  await ref.set({
-    original: domain,
-    status: "locked",
-    stage: "scanning",
-    by: user,
-    result: null
-  });
-
-  status.innerText = "🔍 Scanning started...";
-
-  // ⏳ simulate scan delay
-  setTimeout(async () => {
-
-    let results = [];
-
-    // 🧠 REAL LOGIC (no random)
+  // 🧠 logic based on status
+  if(status === "done"){
     if(domain.length > 8){
-      results = [
+      result = [
         "api." + domain,
         "admin." + domain,
         "dev." + domain
       ];
     }
+  }
 
-    await ref.update({
-      status: "done",
-      stage: "completed",
-      result: results,
-      hasData: results.length > 0
-    });
+  await ref.set({
+    target: target,
+    domain: domain,
+    status: status,
+    assignedTo: user,
+    result: result
+  });
 
-    status.innerText =
-      results.length > 0
-      ? "✅ Found " + results.length + " results"
-      : "❌ No useful findings";
-
-  }, 2500);
+  msg.innerText = "✅ Saved successfully";
 }
 
 
 // 🔄 LIVE TABLE
-db.ref("domains").on("value", snap => {
-  const table = document.getElementById("domainTable");
+db.ref("data").on("value", snap => {
+
+  const table = document.getElementById("table");
   table.innerHTML = "";
 
   const data = snap.val();
   if(!data) return;
 
-  for(let key in data){
-
-    let res = data[key].result;
+  for(let k in data){
 
     table.innerHTML += `
       <tr>
-        <td class="text-blue-400">${data[key].original}</td>
-        <td>${data[key].status}</td>
-        <td>${data[key].by}</td>
-        <td>${res ? JSON.stringify(res) : "-"}</td>
+        <td class="text-blue-400">${data[k].target}</td>
+        <td>${data[k].domain}</td>
+        <td>${data[k].status}</td>
+        <td>${data[k].assignedTo}</td>
+        <td>${data[k].result ? JSON.stringify(data[k].result) : "[]"}</td>
       </tr>
     `;
   }
