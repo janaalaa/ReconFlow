@@ -15,25 +15,28 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 <h1 class="text-3xl text-blue-400 mb-6">ReconFlow</h1>
 
 <!-- INPUTS -->
-<div class="mb-3 space-y-2">
+<div class="mb-4 space-y-2">
 
     <input id="targetInput" placeholder="Target (e.g. google.com)"
-    class="p-3 text-black w-64 block">
+    class="p-3 text-black w-72 block">
 
     <input id="domainInput" placeholder="Domain (e.g. api.google.com)"
-    class="p-3 text-black w-64 block">
+    class="p-3 text-black w-72 block">
 
     <input id="userInput" placeholder="Assigned user"
-    class="p-3 text-black w-64 block">
+    class="p-3 text-black w-72 block">
 
-    <select id="statusInput" class="p-3 text-black w-64 block">
+    <select id="statusInput" class="p-3 text-black w-72 block">
         <option value="locked">locked</option>
         <option value="scanning">scanning</option>
         <option value="done">done</option>
     </select>
 
-    <button onclick="addEntry()"
-    class="bg-blue-600 px-4 py-3">
+    <input id="findingsInput" placeholder="Findings (comma separated)"
+    class="p-3 text-black w-72 block">
+
+    <button onclick="saveData()"
+    class="bg-blue-600 px-4 py-3 rounded">
         Save / Update
     </button>
 
@@ -49,7 +52,7 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
             <th>Domain</th>
             <th>Status</th>
             <th>Assigned To</th>
-            <th>Result</th>
+            <th>Findings</th>
         </tr>
     </thead>
     <tbody id="table"></tbody>
@@ -77,34 +80,28 @@ function clean(d){
 }
 
 
-// 🚀 ADD / UPDATE ENTRY
-async function addEntry(){
+// 🚀 SAVE DATA
+async function saveData(){
 
   const target = document.getElementById("targetInput").value.trim();
   const domain = document.getElementById("domainInput").value.trim();
   const user = document.getElementById("userInput").value.trim();
   const status = document.getElementById("statusInput").value;
+  const findings = document.getElementById("findingsInput").value.trim();
   const msg = document.getElementById("statusMsg");
 
   if(!target || !domain || !user){
-    msg.innerText = "⚠️ Fill all fields";
+    msg.innerText = "⚠️ Please fill target, domain, and user";
     return;
   }
 
   const key = clean(domain);
   const ref = db.ref("data/" + key);
 
-  let result = [];
-
-  // 🧠 logic based on status
-  if(status === "done"){
-    if(domain.length > 8){
-      result = [
-        "api." + domain,
-        "admin." + domain,
-        "dev." + domain
-      ];
-    }
+  // 🧠 convert findings → array
+  let findingsArray = [];
+  if(findings){
+    findingsArray = findings.split(",").map(f => f.trim());
   }
 
   await ref.set({
@@ -112,10 +109,10 @@ async function addEntry(){
     domain: domain,
     status: status,
     assignedTo: user,
-    result: result
+    findings: findingsArray
   });
 
-  msg.innerText = "✅ Saved successfully";
+  msg.innerText = "✅ Data saved successfully";
 }
 
 
@@ -136,7 +133,7 @@ db.ref("data").on("value", snap => {
         <td>${data[k].domain}</td>
         <td>${data[k].status}</td>
         <td>${data[k].assignedTo}</td>
-        <td>${data[k].result ? JSON.stringify(data[k].result) : "[]"}</td>
+        <td>${data[k].findings ? JSON.stringify(data[k].findings) : "[]"}</td>
       </tr>
     `;
   }
