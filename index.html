@@ -14,32 +14,34 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 
 <h1 class="text-3xl text-blue-400 mb-6">ReconFlow</h1>
 
-<!-- USER INPUT -->
+<!-- USER -->
 <div class="mb-3">
-    <input id="userInput" placeholder="Your name"
+    <input id="userInput" placeholder="Username"
     class="p-3 text-black w-64">
 </div>
 
-<!-- DOMAIN INPUT -->
+<!-- DOMAIN -->
 <div class="mb-6">
     <input id="domainInput" placeholder="Enter domain (example.com)"
     class="p-3 text-black w-64">
 
     <button onclick="startRecon()"
     class="bg-blue-600 px-4 py-3 ml-2">
-        Reserve
+        Reserve & Scan
     </button>
 </div>
 
 <p id="statusMsg" class="mb-6 text-gray-300"></p>
 
-<!-- TABLE -->
+<!-- LIVE TABLE -->
 <table class="w-full border text-left">
     <thead>
         <tr>
             <th>Domain</th>
             <th>Status</th>
+            <th>Stage</th>
             <th>User</th>
+            <th>Result</th>
         </tr>
     </thead>
     <tbody id="domainTable"></tbody>
@@ -51,7 +53,7 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 
 <script>
 
-// Firebase config
+// Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyCn6wWqJOQUzJO9wlzOJFX_uXV4pI0_fXs",
   authDomain: "reconflow-72a41.firebaseapp.com",
@@ -63,58 +65,82 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 
-// 🔥 Fix domain for Firebase path
-function cleanDomain(domain) {
-  return domain.replaceAll(".", "_");
+// 🔥 sanitize domain
+function cleanDomain(domain){
+  return domain.replaceAll(".","_");
 }
 
 
-// 🚀 Reserve function
-async function startRecon() {
+// 🚀 MAIN FUNCTION
+async function startRecon(){
+
   const domain = document.getElementById("domainInput").value.trim();
   const user = document.getElementById("userInput").value.trim();
   const status = document.getElementById("statusMsg");
 
-  if (!domain) {
-    status.innerText = "⚠️ Enter a domain";
+  if(!domain || !user){
+    status.innerText = "⚠️ Enter username and domain";
     return;
   }
 
-  const safeDomain = cleanDomain(domain);
+  const key = cleanDomain(domain);
+  const ref = db.ref("domains/" + key);
 
-  const ref = db.ref("domains/" + safeDomain);
-  const snapshot = await ref.get();
+  const snap = await ref.get();
 
-  if (snapshot.exists()) {
-    status.innerText = "❌ Already reserved";
+  // 🔒 already locked
+  if(snap.exists() && snap.val().status === "locked"){
+    status.innerText = "❌ Domain already in use";
     return;
   }
 
+  // 🔒 lock domain
   await ref.set({
     original: domain,
-    status: "taken",
-    by: user || "anonymous",
+    status: "locked",
+    stage: "scanning",
+    by: user,
+    result: null,
     createdAt: new Date().toISOString()
   });
 
-  status.innerText = "✅ Reserved successfully";
+  status.innerText = "🔍 Scanning started...";
+
+  // ⏳ fake scanning flow
+  setTimeout(async () => {
+
+    let result = Math.random() > 0.4
+      ? `${Math.floor(Math.random()*25)} subdomains found`
+      : "no findings";
+
+    await ref.update({
+      stage: "done",
+      status: result === "no findings" ? "available" : "done",
+      result: result
+    });
+
+    status.innerText = "✅ Scan completed: " + result;
+
+  }, 3000);
 }
 
 
-// 🔄 Live table update
-db.ref("domains").on("value", snapshot => {
+// 🔄 LIVE DASHBOARD
+db.ref("domains").on("value", snapshot=>{
   const table = document.getElementById("domainTable");
   table.innerHTML = "";
 
   const data = snapshot.val();
-  if (!data) return;
+  if(!data) return;
 
-  for (let key in data) {
+  for(let key in data){
     table.innerHTML += `
       <tr>
         <td class="text-blue-400">${data[key].original}</td>
         <td>${data[key].status}</td>
+        <td>${data[key].stage}</td>
         <td>${data[key].by}</td>
+        <td>${data[key].result || "-"}</td>
       </tr>
     `;
   }
