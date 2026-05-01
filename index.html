@@ -80,7 +80,7 @@ function clean(d){
 }
 
 
-// 🚀 SAVE DATA
+// 🚀 SAVE / UPDATE
 async function saveData(){
 
   const target = document.getElementById("targetInput").value.trim();
@@ -91,14 +91,14 @@ async function saveData(){
   const msg = document.getElementById("statusMsg");
 
   if(!target || !domain || !user){
-    msg.innerText = "⚠️ Please fill target, domain, and user";
+    msg.innerText = "⚠️ Please fill all required fields";
     return;
   }
 
   const key = clean(domain);
   const ref = db.ref("data/" + key);
 
-  // 🧠 convert findings → array
+  // convert findings → array
   let findingsArray = [];
   if(findings){
     findingsArray = findings.split(",").map(f => f.trim());
@@ -112,7 +112,7 @@ async function saveData(){
     findings: findingsArray
   });
 
-  msg.innerText = "✅ Data saved successfully";
+  msg.innerText = "✅ Saved successfully";
 }
 
 
@@ -133,7 +133,17 @@ db.ref("data").on("value", snap => {
         <td>${data[k].domain}</td>
         <td>${data[k].status}</td>
         <td>${data[k].assignedTo}</td>
-        <td>${data[k].findings ? JSON.stringify(data[k].findings) : "[]"}</td>
+
+        <td>
+          ${
+            data[k].status === "done"
+              ? (data[k].findings?.length
+                  ? data[k].findings.map(f => "✔ " + f).join("<br>")
+                  : "No findings")
+              : "—"
+          }
+        </td>
+
       </tr>
     `;
   }
