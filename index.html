@@ -2,11 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ReconFlow</title>
-
 <script src="https://cdn.tailwindcss.com"></script>
-
 <style>
 body { background:#0b0f1a; color:white; font-family: Arial; }
 </style>
@@ -14,7 +11,7 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 
 <body class="p-10">
 
-<h1 class="text-4xl mb-6 text-blue-400">ReconFlow</h1>
+<h1 class="text-3xl text-blue-400 mb-6">ReconFlow</h1>
 
 <!-- INPUT -->
 <div class="mb-6">
@@ -23,14 +20,14 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 
     <button onclick="startRecon()" 
     class="bg-blue-600 px-4 py-3 ml-2">
-    Reserve
+        Reserve
     </button>
 </div>
 
-<p id="statusMsg" class="mb-6"></p>
+<p id="statusMsg" class="mb-6 text-gray-300"></p>
 
 <!-- TABLE -->
-<table class="w-full text-left border">
+<table class="w-full border text-left">
     <thead>
         <tr>
             <th>Domain</th>
@@ -46,18 +43,25 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
 <script>
+// Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyCn6wWqJOQUzJO9wlzOJFX_uXV4pI0_fXs",
   authDomain: "reconflow-72a41.firebaseapp.com",
   databaseURL: "https://reconflow-72a41-default-rtdb.firebaseio.com/",
-  projectId: "reconflow-72a41",
+  projectId: "reconflow-72a41"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 
-// 🚀 Reserve Domain
+// 🔥 FIX: convert domain to safe key
+function cleanDomain(domain) {
+  return domain.replaceAll(".", "_");
+}
+
+
+// 🚀 Reserve domain
 async function startRecon() {
   const domain = document.getElementById("domainInput").value.trim();
   const status = document.getElementById("statusMsg");
@@ -67,15 +71,18 @@ async function startRecon() {
     return;
   }
 
-  const ref = db.ref("domains/" + domain);
+  const safeDomain = cleanDomain(domain);
+
+  const ref = db.ref("domains/" + safeDomain);
   const snapshot = await ref.get();
 
   if (snapshot.exists()) {
-    status.innerText = "❌ Domain already reserved";
+    status.innerText = "❌ Already reserved";
     return;
   }
 
   await ref.set({
+    original: domain,
     status: "taken",
     by: "jana",
     createdAt: new Date().toISOString()
@@ -85,21 +92,20 @@ async function startRecon() {
 }
 
 
-// 🔄 Live Update
+// 🔄 Live table
 db.ref("domains").on("value", snapshot => {
   const table = document.getElementById("domainTable");
   table.innerHTML = "";
 
   const data = snapshot.val();
-
   if (!data) return;
 
-  for (let domain in data) {
+  for (let key in data) {
     table.innerHTML += `
       <tr>
-        <td class="text-blue-400">${domain}</td>
-        <td>${data[domain].status}</td>
-        <td>${data[domain].by}</td>
+        <td class="text-blue-400">${data[key].original}</td>
+        <td>${data[key].status}</td>
+        <td>${data[key].by}</td>
       </tr>
     `;
   }
