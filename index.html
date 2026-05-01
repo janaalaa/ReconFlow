@@ -75,12 +75,12 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-function clean(d){
-  return d.replaceAll(".","_");
+function clean(domain){
+  return domain.replaceAll(".","_");
 }
 
 
-// 🚀 SAVE / UPDATE
+// 🚀 SAVE DATA (CORE LOGIC)
 async function saveData(){
 
   const target = document.getElementById("targetInput").value.trim();
@@ -98,10 +98,15 @@ async function saveData(){
   const key = clean(domain);
   const ref = db.ref("data/" + key);
 
-  // convert findings → array
+  // 🧠 findings logic (ONLY if done)
   let findingsArray = [];
-  if(findings){
+
+  if(status === "done" && findings){
     findingsArray = findings.split(",").map(f => f.trim());
+  }
+
+  if(status !== "done"){
+    findingsArray = [];
   }
 
   await ref.set({
@@ -116,7 +121,7 @@ async function saveData(){
 }
 
 
-// 🔄 LIVE TABLE
+// 🔄 LIVE DASHBOARD
 db.ref("data").on("value", snap => {
 
   const table = document.getElementById("table");
