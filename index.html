@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>ReconFlow</title>
 <script src="https://cdn.tailwindcss.com"></script>
-
 <style>
 body { background:#0b0f1a; color:white; font-family: Arial; }
 </style>
@@ -23,27 +22,21 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 
 <p id="userStatus" class="mb-6 text-gray-300">Not logged in</p>
 
-<!-- INPUTS -->
+<!-- INPUT -->
 <div class="mb-4 space-y-2">
 
-    <input id="targetInput" placeholder="Target (e.g. google.com)"
+    <input id="targetInput" placeholder="Target (google.com)"
     class="p-3 text-black w-72 block">
 
-    <input id="domainInput" placeholder="Domain (e.g. api.google.com)"
+    <input id="domainInput" placeholder="Domain (api.google.com)"
     class="p-3 text-black w-72 block">
-
-    <select id="statusInput" class="p-3 text-black w-72 block">
-        <option value="locked">locked</option>
-        <option value="scanning">scanning</option>
-        <option value="done">done</option>
-    </select>
 
     <input id="findingsInput" placeholder="Findings (comma separated)"
     class="p-3 text-black w-72 block">
 
     <button onclick="saveData()"
     class="bg-blue-600 px-4 py-3 rounded">
-        Save / Update
+        Start / Update
     </button>
 
 </div>
@@ -51,18 +44,22 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 <p id="statusMsg" class="mb-6 text-gray-300"></p>
 
 <!-- TABLE -->
-<table class="w-full border text-left">
-    <thead>
-        <tr>
-            <th>Target</th>
-            <th>Domain</th>
-            <th>Status</th>
-            <th>Assigned To</th>
-            <th>Findings</th>
-        </tr>
-    </thead>
-    <tbody id="table"></tbody>
+<table class="w-full border text-left mb-10">
+<thead>
+<tr>
+<th>Target</th>
+<th>Domain</th>
+<th>Status</th>
+<th>User</th>
+<th>Findings</th>
+</tr>
+</thead>
+<tbody id="table"></tbody>
 </table>
+
+<!-- ACTIVITY LOG -->
+<h2 class="text-xl text-emerald-400 mb-3">Activity Log</h2>
+<ul id="activity" class="text-sm space-y-1"></ul>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -71,9 +68,9 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 
 <script>
 
-// 🔥 Firebase Config
+// 🔥 CONFIG
 const firebaseConfig = {
-  apiKey: "AIzaSyCn6wWqJOQUzJO9wlzOJFX_uXV4pI0_fXs",
+  apiKey: "AIzaSyCn6...",
   authDomain: "reconflow-72a41.firebaseapp.com",
   databaseURL: "https://reconflow-72a41-default-rtdb.firebaseio.com/",
   projectId: "reconflow-72a41"
@@ -86,115 +83,118 @@ const auth = firebase.auth();
 
 let currentUser = null;
 
-
-// 🔐 AUTH SYSTEM
-
-async function register(){
-  const email = prompt("Enter email");
-  const password = prompt("Enter password");
-
-  try{
-    await auth.createUserWithEmailAndPassword(email, password);
-    alert("User created");
-  }catch(e){
-    alert(e.message);
+// 🔐 AUTH
+auth.onAuthStateChanged(user => {
+  const el = document.getElementById("userStatus");
+  if(user){
+    currentUser = user.email;
+    el.innerText = "Logged in: " + currentUser;
+  }else{
+    currentUser = null;
+    el.innerText = "Not logged in";
   }
+});
+
+function register(){
+  const email = prompt("Email");
+  const pass = prompt("Password");
+  auth.createUserWithEmailAndPassword(email, pass);
 }
 
-async function login(){
+function login(){
   const email = prompt("Email");
-  const password = prompt("Password");
-
-  try{
-    await auth.signInWithEmailAndPassword(email, password);
-  }catch(e){
-    alert(e.message);
-  }
+  const pass = prompt("Password");
+  auth.signInWithEmailAndPassword(email, pass);
 }
 
 function logout(){
   auth.signOut();
 }
 
-auth.onAuthStateChanged(user => {
-  const status = document.getElementById("userStatus");
-
-  if(user){
-    currentUser = user.email;
-    status.innerText = "Logged in as: " + currentUser;
-  }else{
-    currentUser = null;
-    status.innerText = "Not logged in";
-  }
-});
-
-
-// 🧠 HELPER
-function clean(domain){
-  return domain.replaceAll(".","_");
+// 🧠 HELPERS
+function clean(d){
+  return d.replaceAll(".", "_");
 }
 
-
-// 🚀 SAVE DATA (WITH SECURITY LOGIC)
-
+// 🚀 CORE LOGIC
 async function saveData(){
 
   const target = document.getElementById("targetInput").value.trim();
   const domain = document.getElementById("domainInput").value.trim();
-  const status = document.getElementById("statusInput").value;
   const findings = document.getElementById("findingsInput").value.trim();
   const msg = document.getElementById("statusMsg");
 
+  // ❌ login check
   if(!currentUser){
-    msg.innerText = "❌ Please login first";
+    msg.innerText = "❌ login first";
     return;
   }
 
-  if(!target || !domain){
-    msg.innerText = "⚠️ Fill target and domain";
+  // ❌ validation
+  const domainRegex = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if(!domainRegex.test(domain)){
+    msg.innerText = "❌ invalid domain";
     return;
   }
 
   const key = clean(domain);
   const ref = db.ref("data/" + key);
 
-  const snapshot = await ref.get();
+  const snap = await ref.get();
 
-  // 🔒 ownership check
-  if(snapshot.exists()){
-    const existing = snapshot.val();
+  let newStatus = "locked";
+  let findingsArray = [];
 
-    if(existing.assignedTo !== currentUser){
-      msg.innerText = "❌ This domain is owned by " + existing.assignedTo;
+  // 🧠 STATUS FLOW
+  if(!snap.exists()){
+    newStatus = "locked";
+  }else{
+    const old = snap.val();
+
+    if(old.assignedTo !== currentUser){
+      msg.innerText = "❌ owned by " + old.assignedTo;
       return;
+    }
+
+    if(old.status === "locked"){
+      newStatus = "scanning";
+    }
+    else if(old.status === "scanning"){
+      newStatus = "done";
+    }
+    else{
+      newStatus = "done";
     }
   }
 
-  // 🧠 findings logic
-  let findingsArray = [];
-
-  if(status === "done" && findings){
+  // 📦 findings only if done
+  if(newStatus === "done" && findings){
     findingsArray = findings.split(",").map(f => f.trim());
   }
 
-  if(status !== "done"){
-    findingsArray = [];
-  }
-
+  // 💾 save
   await ref.set({
-    target: target,
-    domain: domain,
-    status: status,
+    target,
+    domain,
+    status: newStatus,
     assignedTo: currentUser,
-    findings: findingsArray
+    findings: findingsArray,
+    updatedAt: Date.now()
   });
 
-  msg.innerText = "✅ Saved successfully";
+  // 📝 activity log
+  await db.ref("activity").push({
+    user: currentUser,
+    domain: domain,
+    status: newStatus,
+    time: new Date().toLocaleString()
+  });
+
+  msg.innerText = "✅ " + newStatus;
 }
 
 
-// 🔄 LIVE TABLE
-
+// 🔄 TABLE
 db.ref("data").on("value", snap => {
 
   const table = document.getElementById("table");
@@ -204,26 +204,35 @@ db.ref("data").on("value", snap => {
   if(!data) return;
 
   for(let k in data){
-
     table.innerHTML += `
-      <tr>
-        <td class="text-blue-400">${data[k].target}</td>
-        <td>${data[k].domain}</td>
-        <td>${data[k].status}</td>
-        <td>${data[k].assignedTo}</td>
-
-        <td>
-          ${
-            data[k].status === "done"
-              ? (data[k].findings?.length
-                  ? data[k].findings.map(f => "✔ " + f).join("<br>")
-                  : "No findings")
-              : "—"
-          }
-        </td>
-      </tr>
-    `;
+    <tr>
+      <td>${data[k].target}</td>
+      <td>${data[k].domain}</td>
+      <td>${data[k].status}</td>
+      <td>${data[k].assignedTo}</td>
+      <td>
+        ${
+          data[k].status === "done"
+          ? (data[k].findings?.join(", ") || "No findings")
+          : "—"
+        }
+      </td>
+    </tr>`;
   }
+});
+
+// 🔄 ACTIVITY
+db.ref("activity").limitToLast(10).on("value", snap => {
+
+  const list = document.getElementById("activity");
+  list.innerHTML = "";
+
+  const data = snap.val();
+  if(!data) return;
+
+  Object.values(data).reverse().forEach(a => {
+    list.innerHTML += `<li>👤 ${a.user} → ${a.domain} (${a.status}) @ ${a.time}</li>`;
+  });
 });
 
 </script>
