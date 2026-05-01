@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>ReconFlow</title>
 <script src="https://cdn.tailwindcss.com"></script>
+
 <style>
 body { background:#0b0f1a; color:white; font-family: Arial; }
 </style>
@@ -13,12 +14,18 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 
 <h1 class="text-3xl text-blue-400 mb-6">ReconFlow</h1>
 
-<!-- INPUT -->
+<!-- USER INPUT -->
+<div class="mb-3">
+    <input id="userInput" placeholder="Your name"
+    class="p-3 text-black w-64">
+</div>
+
+<!-- DOMAIN INPUT -->
 <div class="mb-6">
-    <input id="domainInput" placeholder="Enter domain (example.com)" 
+    <input id="domainInput" placeholder="Enter domain (example.com)"
     class="p-3 text-black w-64">
 
-    <button onclick="startRecon()" 
+    <button onclick="startRecon()"
     class="bg-blue-600 px-4 py-3 ml-2">
         Reserve
     </button>
@@ -43,7 +50,8 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
 <script>
-// Firebase Config
+
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyCn6wWqJOQUzJO9wlzOJFX_uXV4pI0_fXs",
   authDomain: "reconflow-72a41.firebaseapp.com",
@@ -55,15 +63,16 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 
-// 🔥 FIX: convert domain to safe key
+// 🔥 Fix domain for Firebase path
 function cleanDomain(domain) {
   return domain.replaceAll(".", "_");
 }
 
 
-// 🚀 Reserve domain
+// 🚀 Reserve function
 async function startRecon() {
   const domain = document.getElementById("domainInput").value.trim();
+  const user = document.getElementById("userInput").value.trim();
   const status = document.getElementById("statusMsg");
 
   if (!domain) {
@@ -84,7 +93,7 @@ async function startRecon() {
   await ref.set({
     original: domain,
     status: "taken",
-    by: "jana",
+    by: user || "anonymous",
     createdAt: new Date().toISOString()
   });
 
@@ -92,7 +101,7 @@ async function startRecon() {
 }
 
 
-// 🔄 Live table
+// 🔄 Live table update
 db.ref("domains").on("value", snapshot => {
   const table = document.getElementById("domainTable");
   table.innerHTML = "";
@@ -110,6 +119,7 @@ db.ref("domains").on("value", snapshot => {
     `;
   }
 });
+
 </script>
 
 </body>
