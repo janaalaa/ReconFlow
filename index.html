@@ -14,6 +14,15 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 
 <h1 class="text-3xl text-blue-400 mb-6">ReconFlow</h1>
 
+<!-- AUTH -->
+<div class="mb-6 space-x-2">
+    <button onclick="register()" class="bg-green-600 px-3 py-2 rounded">Register</button>
+    <button onclick="login()" class="bg-yellow-500 px-3 py-2 rounded">Login</button>
+    <button onclick="logout()" class="bg-red-600 px-3 py-2 rounded">Logout</button>
+</div>
+
+<p id="userStatus" class="mb-6 text-gray-300">Not logged in</p>
+
 <!-- INPUTS -->
 <div class="mb-4 space-y-2">
 
@@ -21,9 +30,6 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
     class="p-3 text-black w-72 block">
 
     <input id="domainInput" placeholder="Domain (e.g. api.google.com)"
-    class="p-3 text-black w-72 block">
-
-    <input id="userInput" placeholder="Assigned user"
     class="p-3 text-black w-72 block">
 
     <select id="statusInput" class="p-3 text-black w-72 block">
@@ -61,10 +67,11 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
 <script>
 
-// Firebase config
+// 🔥 Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyCn6wWqJOQUzJO9wlzOJFX_uXV4pI0_fXs",
   authDomain: "reconflow-72a41.firebaseapp.com",
@@ -73,32 +80,97 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
 
+const db = firebase.database();
+const auth = firebase.auth();
+
+let currentUser = null;
+
+
+// 🔐 AUTH SYSTEM
+
+async function register(){
+  const email = prompt("Enter email");
+  const password = prompt("Enter password");
+
+  try{
+    await auth.createUserWithEmailAndPassword(email, password);
+    alert("User created");
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+async function login(){
+  const email = prompt("Email");
+  const password = prompt("Password");
+
+  try{
+    await auth.signInWithEmailAndPassword(email, password);
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+function logout(){
+  auth.signOut();
+}
+
+auth.onAuthStateChanged(user => {
+  const status = document.getElementById("userStatus");
+
+  if(user){
+    currentUser = user.email;
+    status.innerText = "Logged in as: " + currentUser;
+  }else{
+    currentUser = null;
+    status.innerText = "Not logged in";
+  }
+});
+
+
+// 🧠 HELPER
 function clean(domain){
   return domain.replaceAll(".","_");
 }
 
 
-// 🚀 SAVE DATA (CORE LOGIC)
+// 🚀 SAVE DATA (WITH SECURITY LOGIC)
+
 async function saveData(){
 
   const target = document.getElementById("targetInput").value.trim();
   const domain = document.getElementById("domainInput").value.trim();
-  const user = document.getElementById("userInput").value.trim();
   const status = document.getElementById("statusInput").value;
   const findings = document.getElementById("findingsInput").value.trim();
   const msg = document.getElementById("statusMsg");
 
-  if(!target || !domain || !user){
-    msg.innerText = "⚠️ Please fill all required fields";
+  if(!currentUser){
+    msg.innerText = "❌ Please login first";
+    return;
+  }
+
+  if(!target || !domain){
+    msg.innerText = "⚠️ Fill target and domain";
     return;
   }
 
   const key = clean(domain);
   const ref = db.ref("data/" + key);
 
-  // 🧠 findings logic (ONLY if done)
+  const snapshot = await ref.get();
+
+  // 🔒 ownership check
+  if(snapshot.exists()){
+    const existing = snapshot.val();
+
+    if(existing.assignedTo !== currentUser){
+      msg.innerText = "❌ This domain is owned by " + existing.assignedTo;
+      return;
+    }
+  }
+
+  // 🧠 findings logic
   let findingsArray = [];
 
   if(status === "done" && findings){
@@ -113,7 +185,7 @@ async function saveData(){
     target: target,
     domain: domain,
     status: status,
-    assignedTo: user,
+    assignedTo: currentUser,
     findings: findingsArray
   });
 
@@ -121,7 +193,8 @@ async function saveData(){
 }
 
 
-// 🔄 LIVE DASHBOARD
+// 🔄 LIVE TABLE
+
 db.ref("data").on("value", snap => {
 
   const table = document.getElementById("table");
@@ -148,7 +221,6 @@ db.ref("data").on("value", snap => {
               : "—"
           }
         </td>
-
       </tr>
     `;
   }
