@@ -16,7 +16,7 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 
 <!-- USER -->
 <div class="mb-4 flex justify-between">
-  <p id="userStatus">Loading...</p>
+  <p id="userStatus">Guest Mode (No Login)</p>
 </div>
 
 <!-- INPUTS -->
@@ -55,6 +55,7 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 <th>Status</th>
 <th>User</th>
 <th>Findings</th>
+<th>Actions</th>
 </tr>
 </thead>
 <tbody id="table"></tbody>
@@ -78,14 +79,10 @@ firebase.initializeApp(firebaseConfig);
 
 const db = firebase.database();
 
-// 🟡 Guest Mode
+// 🟡 Guest user
 const currentUser = "guest_user";
 const currentUID = "guest_uid";
 
-document.getElementById("userStatus").innerText =
-  "Guest Mode (No Login)";
-
-// 🧠 helper
 function clean(d){
   return d.replaceAll(".","_");
 }
@@ -99,7 +96,6 @@ async function saveData(){
   const findings = document.getElementById("findingsInput").value.trim();
   const msg = document.getElementById("statusMsg");
 
-  // ✅ validation
   const domainRegex = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   if(!domainRegex.test(domain)){
     msg.innerText = "❌ Invalid domain";
@@ -114,15 +110,10 @@ async function saveData(){
   const key = clean(domain);
   const ref = db.ref("data/" + key);
 
-  // 🧠 findings logic
   let findingsArray = [];
 
   if(status === "done" && findings){
     findingsArray = findings.split(",").map(f => f.trim());
-  }
-
-  if(status !== "done"){
-    findingsArray = [];
   }
 
   await ref.set({
@@ -137,6 +128,18 @@ async function saveData(){
   msg.innerText = "✅ Saved";
 }
 
+// 🗑️ DELETE
+async function deleteData(domain, uid){
+
+  if(uid !== currentUID){
+    alert("❌ You are not allowed to delete this");
+    return;
+  }
+
+  const key = clean(domain);
+  await db.ref("data/" + key).remove();
+}
+
 // 🔄 TABLE
 db.ref("data").on("value", snap => {
 
@@ -148,20 +151,33 @@ db.ref("data").on("value", snap => {
 
   for(let k in data){
 
+    const item = data[k];
+
     table.innerHTML += `
       <tr>
-        <td class="text-blue-400">${data[k].target}</td>
-        <td>${data[k].domain}</td>
-        <td>${data[k].status}</td>
-        <td>${data[k].assignedTo}</td>
+        <td class="text-blue-400">${item.target}</td>
+        <td>${item.domain}</td>
+        <td>${item.status}</td>
+        <td>${item.assignedTo}</td>
 
         <td>
           ${
-            data[k].status === "done"
-              ? (data[k].findings?.length
-                  ? data[k].findings.join(", ")
+            item.status === "done"
+              ? (item.findings?.length
+                  ? item.findings.join(", ")
                   : "No findings")
               : "—"
+          }
+        </td>
+
+        <td>
+          ${
+            item.uid === currentUID
+              ? `<button onclick="deleteData('${item.domain}', '${item.uid}')"
+                  class="bg-red-600 px-2 py-1 rounded text-xs">
+                  Delete
+                 </button>`
+              : "🔒"
           }
         </td>
       </tr>
