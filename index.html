@@ -14,16 +14,19 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 
 <h1 class="text-3xl text-blue-400 mb-6">ReconFlow</h1>
 
+<!-- USER -->
+<div class="mb-4 flex justify-between">
+  <p id="userStatus">Loading...</p>
+  <button onclick="logout()" class="bg-red-600 px-3 py-2 rounded">Logout</button>
+</div>
+
 <!-- INPUTS -->
 <div class="mb-4 space-y-2">
 
-    <input id="targetInput" placeholder="Target (e.g. google.com)"
+    <input id="targetInput" placeholder="Target (google.com)"
     class="p-3 text-black w-72 block">
 
-    <input id="domainInput" placeholder="Domain (e.g. api.google.com)"
-    class="p-3 text-black w-72 block">
-
-    <input id="userInput" placeholder="Assigned user"
+    <input id="domainInput" placeholder="Domain (api.google.com)"
     class="p-3 text-black w-72 block">
 
     <select id="statusInput" class="p-3 text-black w-72 block">
@@ -46,25 +49,26 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 
 <!-- TABLE -->
 <table class="w-full border text-left">
-    <thead>
-        <tr>
-            <th>Target</th>
-            <th>Domain</th>
-            <th>Status</th>
-            <th>Assigned To</th>
-            <th>Findings</th>
-        </tr>
-    </thead>
-    <tbody id="table"></tbody>
+<thead>
+<tr>
+<th>Target</th>
+<th>Domain</th>
+<th>Status</th>
+<th>User</th>
+<th>Findings</th>
+</tr>
+</thead>
+<tbody id="table"></tbody>
 </table>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
 <script>
 
-// Firebase config
+// 🔥 CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyCn6wWqJOQUzJO9wlzOJFX_uXV4pI0_fXs",
   authDomain: "reconflow-72a41.firebaseapp.com",
@@ -73,55 +77,92 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
 
-function clean(domain){
-  return domain.replaceAll(".","_");
+const db = firebase.database();
+const auth = firebase.auth();
+
+let currentUser = null;
+let currentUID = null;
+
+// 🔐 AUTH CHECK
+auth.onAuthStateChanged(user => {
+  if(!user){
+    window.location.href = "auth.html";
+  } else {
+    currentUser = user.email;
+    currentUID = user.uid;
+
+    document.getElementById("userStatus").innerText =
+      "Logged in: " + currentUser;
+  }
+});
+
+function logout(){
+  auth.signOut();
 }
 
+// 🧠 helper
+function clean(d){
+  return d.replaceAll(".","_");
+}
 
-// 🚀 SAVE DATA (CORE LOGIC)
+// 🚀 SAVE
 async function saveData(){
 
   const target = document.getElementById("targetInput").value.trim();
   const domain = document.getElementById("domainInput").value.trim();
-  const user = document.getElementById("userInput").value.trim();
   const status = document.getElementById("statusInput").value;
   const findings = document.getElementById("findingsInput").value.trim();
   const msg = document.getElementById("statusMsg");
 
-  if(!target || !domain || !user){
-    msg.innerText = "⚠️ Please fill all required fields";
+  // ❌ validation
+  const domainRegex = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if(!domainRegex.test(domain)){
+    msg.innerText = "❌ Invalid domain";
+    return;
+  }
+
+  if(!target || !domain){
+    msg.innerText = "⚠️ Fill required fields";
     return;
   }
 
   const key = clean(domain);
   const ref = db.ref("data/" + key);
 
-  // 🧠 findings logic (ONLY if done)
+  const snap = await ref.get();
+
+  // 🔒 ownership
+  if(snap.exists()){
+    const old = snap.val();
+
+    if(old.uid !== currentUID){
+      msg.innerText = "❌ Owned by another user";
+      return;
+    }
+  }
+
+  // 🧠 findings logic
   let findingsArray = [];
 
   if(status === "done" && findings){
     findingsArray = findings.split(",").map(f => f.trim());
   }
 
-  if(status !== "done"){
-    findingsArray = [];
-  }
-
   await ref.set({
-    target: target,
-    domain: domain,
-    status: status,
-    assignedTo: user,
+    target,
+    domain,
+    status,
+    assignedTo: currentUser,
+    uid: currentUID,
     findings: findingsArray
   });
 
-  msg.innerText = "✅ Saved successfully";
+  msg.innerText = "✅ Saved";
 }
 
 
-// 🔄 LIVE DASHBOARD
+// 🔄 TABLE
 db.ref("data").on("value", snap => {
 
   const table = document.getElementById("table");
@@ -143,12 +184,11 @@ db.ref("data").on("value", snap => {
           ${
             data[k].status === "done"
               ? (data[k].findings?.length
-                  ? data[k].findings.map(f => "✔ " + f).join("<br>")
+                  ? data[k].findings.join(", ")
                   : "No findings")
               : "—"
           }
         </td>
-
       </tr>
     `;
   }
