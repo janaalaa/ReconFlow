@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>ReconFlow Dashboard</title>
+<title>ReconFlow</title>
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
@@ -12,23 +12,18 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 
 <body class="p-10">
 
-<h1 class="text-3xl text-blue-400 mb-4">ReconFlow</h1>
-
-<!-- USER INFO -->
-<div class="mb-4 flex justify-between items-center">
-  <p id="userStatus" class="text-gray-300">Loading...</p>
-  <button onclick="logout()" class="bg-red-600 px-3 py-2 rounded">Logout</button>
-</div>
-
-<hr class="border-gray-700 mb-6">
+<h1 class="text-3xl text-blue-400 mb-6">ReconFlow</h1>
 
 <!-- INPUTS -->
-<div class="mb-6 space-y-2">
+<div class="mb-4 space-y-2">
 
-    <input id="targetInput" placeholder="Target (google.com)"
+    <input id="targetInput" placeholder="Target (e.g. google.com)"
     class="p-3 text-black w-72 block">
 
-    <input id="domainInput" placeholder="Domain (api.google.com)"
+    <input id="domainInput" placeholder="Domain (e.g. api.google.com)"
+    class="p-3 text-black w-72 block">
+
+    <input id="userInput" placeholder="Assigned user"
     class="p-3 text-black w-72 block">
 
     <select id="statusInput" class="p-3 text-black w-72 block">
@@ -47,115 +42,86 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 
 </div>
 
-<p id="msg" class="mb-6 text-gray-300"></p>
+<p id="statusMsg" class="mb-6 text-gray-300"></p>
 
 <!-- TABLE -->
 <table class="w-full border text-left">
-<thead>
-<tr>
-<th>Target</th>
-<th>Domain</th>
-<th>Status</th>
-<th>User</th>
-<th>Findings</th>
-</tr>
-</thead>
-<tbody id="table"></tbody>
+    <thead>
+        <tr>
+            <th>Target</th>
+            <th>Domain</th>
+            <th>Status</th>
+            <th>Assigned To</th>
+            <th>Findings</th>
+        </tr>
+    </thead>
+    <tbody id="table"></tbody>
 </table>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
 <script>
 
+// Firebase config
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
+  apiKey: "AIzaSyCn6wWqJOQUzJO9wlzOJFX_uXV4pI0_fXs",
   authDomain: "reconflow-72a41.firebaseapp.com",
   databaseURL: "https://reconflow-72a41-default-rtdb.firebaseio.com/",
   projectId: "reconflow-72a41"
 };
 
 firebase.initializeApp(firebaseConfig);
-
 const db = firebase.database();
-const auth = firebase.auth();
 
-let currentUser = null;
-
-
-// 🔐 AUTH PROTECTION
-auth.onAuthStateChanged(user => {
-
-  if(!user){
-    window.location.href = "auth.html";
-  } else {
-    currentUser = user.email;
-    document.getElementById("userStatus").innerText =
-      "Logged in as: " + currentUser;
-  }
-});
-
-function logout(){
-  auth.signOut();
-}
-
-// 🧠 helper
-function clean(d){
-  return d.replaceAll(".","_");
+function clean(domain){
+  return domain.replaceAll(".","_");
 }
 
 
-// 🚀 SAVE DATA
+// 🚀 SAVE DATA (CORE LOGIC)
 async function saveData(){
 
   const target = document.getElementById("targetInput").value.trim();
   const domain = document.getElementById("domainInput").value.trim();
+  const user = document.getElementById("userInput").value.trim();
   const status = document.getElementById("statusInput").value;
   const findings = document.getElementById("findingsInput").value.trim();
-  const msg = document.getElementById("msg");
+  const msg = document.getElementById("statusMsg");
 
-  if(!target || !domain){
-    msg.innerText = "❌ Fill required fields";
+  if(!target || !domain || !user){
+    msg.innerText = "⚠️ Please fill all required fields";
     return;
   }
 
   const key = clean(domain);
   const ref = db.ref("data/" + key);
 
-  const snap = await ref.get();
-
+  // 🧠 findings logic (ONLY if done)
   let findingsArray = [];
 
-  // 🔒 ownership
-  if(snap.exists()){
-    const old = snap.val();
-
-    if(old.assignedTo !== currentUser){
-      msg.innerText = "❌ Not your domain";
-      return;
-    }
-  }
-
-  // 🧠 findings only if done
   if(status === "done" && findings){
     findingsArray = findings.split(",").map(f => f.trim());
   }
 
+  if(status !== "done"){
+    findingsArray = [];
+  }
+
   await ref.set({
-    target,
-    domain,
-    status,
-    assignedTo: currentUser,
+    target: target,
+    domain: domain,
+    status: status,
+    assignedTo: user,
     findings: findingsArray
   });
 
-  msg.innerText = "✅ Saved";
+  msg.innerText = "✅ Saved successfully";
 }
 
 
-// 🔄 LIVE TABLE
+// 🔄 LIVE DASHBOARD
 db.ref("data").on("value", snap => {
 
   const table = document.getElementById("table");
@@ -168,17 +134,21 @@ db.ref("data").on("value", snap => {
 
     table.innerHTML += `
       <tr>
-        <td>${data[k].target}</td>
+        <td class="text-blue-400">${data[k].target}</td>
         <td>${data[k].domain}</td>
         <td>${data[k].status}</td>
         <td>${data[k].assignedTo}</td>
+
         <td>
           ${
             data[k].status === "done"
-            ? (data[k].findings?.join(", ") || "No findings")
-            : "—"
+              ? (data[k].findings?.length
+                  ? data[k].findings.map(f => "✔ " + f).join("<br>")
+                  : "No findings")
+              : "—"
           }
         </td>
+
       </tr>
     `;
   }
