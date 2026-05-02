@@ -17,7 +17,6 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 <!-- USER -->
 <div class="mb-4 flex justify-between">
   <p id="userStatus">Loading...</p>
-  <button onclick="logout()" class="bg-red-600 px-3 py-2 rounded">Logout</button>
 </div>
 
 <!-- INPUTS -->
@@ -64,7 +63,6 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
 <script>
 
@@ -79,27 +77,13 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 const db = firebase.database();
-const auth = firebase.auth();
 
-let currentUser = null;
-let currentUID = null;
+// 🟡 Guest Mode
+const currentUser = "guest_user";
+const currentUID = "guest_uid";
 
-// 🔐 AUTH CHECK
-auth.onAuthStateChanged(user => {
-  if(!user){
-    window.location.href = "auth.html";
-  } else {
-    currentUser = user.email;
-    currentUID = user.uid;
-
-    document.getElementById("userStatus").innerText =
-      "Logged in: " + currentUser;
-  }
-});
-
-function logout(){
-  auth.signOut();
-}
+document.getElementById("userStatus").innerText =
+  "Guest Mode (No Login)";
 
 // 🧠 helper
 function clean(d){
@@ -115,7 +99,7 @@ async function saveData(){
   const findings = document.getElementById("findingsInput").value.trim();
   const msg = document.getElementById("statusMsg");
 
-  // ❌ validation
+  // ✅ validation
   const domainRegex = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   if(!domainRegex.test(domain)){
     msg.innerText = "❌ Invalid domain";
@@ -130,23 +114,15 @@ async function saveData(){
   const key = clean(domain);
   const ref = db.ref("data/" + key);
 
-  const snap = await ref.get();
-
-  // 🔒 ownership
-  if(snap.exists()){
-    const old = snap.val();
-
-    if(old.uid !== currentUID){
-      msg.innerText = "❌ Owned by another user";
-      return;
-    }
-  }
-
   // 🧠 findings logic
   let findingsArray = [];
 
   if(status === "done" && findings){
     findingsArray = findings.split(",").map(f => f.trim());
+  }
+
+  if(status !== "done"){
+    findingsArray = [];
   }
 
   await ref.set({
@@ -160,7 +136,6 @@ async function saveData(){
 
   msg.innerText = "✅ Saved";
 }
-
 
 // 🔄 TABLE
 db.ref("data").on("value", snap => {
