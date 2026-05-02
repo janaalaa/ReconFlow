@@ -14,9 +14,10 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 
 <h1 class="text-3xl text-blue-400 mb-6">ReconFlow</h1>
 
-<!-- USER -->
-<div class="mb-4 flex justify-between">
-  <p id="userStatus">Guest Mode (No Login)</p>
+<!-- USER INPUT -->
+<div class="mb-4 space-y-2">
+  <input id="userInput" placeholder="Your username"
+  class="p-3 text-black w-72 block">
 </div>
 
 <!-- INPUTS -->
@@ -67,7 +68,6 @@ body { background:#0b0f1a; color:white; font-family: Arial; }
 
 <script>
 
-// 🔥 CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyCn6wWqJOQUzJO9wlzOJFX_uXV4pI0_fXs",
   authDomain: "reconflow-72a41.firebaseapp.com",
@@ -79,10 +79,7 @@ firebase.initializeApp(firebaseConfig);
 
 const db = firebase.database();
 
-// 🟡 Guest user
-const currentUser = "guest_user";
-const currentUID = "guest_uid";
-
+// 🧠 helper
 function clean(d){
   return d.replaceAll(".","_");
 }
@@ -90,11 +87,17 @@ function clean(d){
 // 🚀 SAVE
 async function saveData(){
 
+  const user = document.getElementById("userInput").value.trim();
   const target = document.getElementById("targetInput").value.trim();
   const domain = document.getElementById("domainInput").value.trim();
   const status = document.getElementById("statusInput").value;
   const findings = document.getElementById("findingsInput").value.trim();
   const msg = document.getElementById("statusMsg");
+
+  if(!user){
+    msg.innerText = "❌ Please enter username";
+    return;
+  }
 
   const domainRegex = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   if(!domainRegex.test(domain)){
@@ -120,19 +123,21 @@ async function saveData(){
     target,
     domain,
     status,
-    assignedTo: currentUser,
-    uid: currentUID,
+    assignedTo: user,
+    uid: user, // username-based identity
     findings: findingsArray
   });
 
   msg.innerText = "✅ Saved";
 }
 
-// 🗑️ DELETE
+// 🗑️ DELETE (only owner username)
 async function deleteData(domain, uid){
 
-  if(uid !== currentUID){
-    alert("❌ You are not allowed to delete this");
+  const currentUser = document.getElementById("userInput").value.trim();
+
+  if(uid !== currentUser){
+    alert("❌ Not allowed");
     return;
   }
 
@@ -171,14 +176,10 @@ db.ref("data").on("value", snap => {
         </td>
 
         <td>
-          ${
-            item.uid === currentUID
-              ? `<button onclick="deleteData('${item.domain}', '${item.uid}')"
-                  class="bg-red-600 px-2 py-1 rounded text-xs">
-                  Delete
-                 </button>`
-              : "🔒"
-          }
+          <button onclick="deleteData('${item.domain}', '${item.uid}')"
+          class="bg-red-600 px-2 py-1 rounded text-xs">
+            Delete
+          </button>
         </td>
       </tr>
     `;
